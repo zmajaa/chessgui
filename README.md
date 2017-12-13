@@ -4,6 +4,7 @@ Simple chess with tkinter
 
 
 Final project for my python course
+
 Still in the making
 
 
