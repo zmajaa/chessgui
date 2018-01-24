@@ -11,7 +11,7 @@ class Model(dict):
     history = []
 
     def __init__(self):
-     pass
+     self.reset_to_initial_locations()
 
     def get_piece_at(self, position):
         return self.get(position)
