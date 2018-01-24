@@ -7,26 +7,21 @@ import exceptions
 
 
 class View:
+
     selected_piece_position = None
+    board_color_1=BOARD_COLOR_1
+    board_color_2=BOARD_COLOR_2
+    all_squares_to_be_highlighted = []
+    images = dict()
+    highlight_color=HIGHLIGHT_COLOR
+
     def __init__(self, root, kontroler):
         self.root=root
-        self.all_squares_to_be_highlighted=[]
-        self.images = dict()
         self.controller = kontroler
-        self.board_color_1=BOARD_COLOR_1
-        self.board_color_2=BOARD_COLOR_2
         self.create_chess_base()
-        #creating bottom frame
-        self.btmfrm = Frame(root, height=64)
-        self.info_label = Label(self.btmfrm, text="   White to Start the Game  ", fg=self.board_color_2)
-        self.info_label.pack(side=RIGHT, padx=8, pady=5)
-        self.btmfrm.pack(fill="x", side=BOTTOM)
         #starting game
         self.start_new_game()
         self.canvas.bind("<Button-1>", self.on_square_clicked)
-
-
-
 
 
     def create_chess_base(self):
@@ -36,9 +31,10 @@ class View:
         self.create_bottom_frame()
 
     def create_top_menu(self):
+        """Creating top menu"""
         self.menu_bar = Menu(self.root)
+        # everything added to menu is here
         self.file_menu = Menu(self.menu_bar, tearoff=0)
-        # everything added to meni is here
         self.menu_bar.add_cascade(label="File", menu=self.file_menu)
 
         self.edit_menu=Menu(self.menu_bar, tearoff=0)
@@ -50,12 +46,18 @@ class View:
         self.root.configure(menu=self.menu_bar)
 
     def show_about(self):
-        tkinter.messagebox.showinfo(PROGRAM_NAME, "Tkinter GUI Application\nDevelopment Blueprints")
+        tkinter.messagebox.showinfo(PROGRAM_NAME, "Tkinter GUI Application\nSimple Chess game")
 
     def create_bottom_frame(self):
-        pass
+        """Creating bottom frame"""
+        self.btmfrm=Frame(self.root, height=64)
+        self.info_label = Label(self.btmfrm, text="   White to Start the Game  ", fg=self.board_color_2)
+        self.info_label.pack(side=RIGHT, padx=8, pady=5)
+        self.btmfrm.pack(fill="x", side=BOTTOM)
+
 
     def create_canvas(self):
+        """Creating Canvas widget"""
         canvas_width = NUMBER_OF_COLUMNS *DIMENSION_OF_EACH_SQUARE
         canvas_height = NUMBER_OF_ROWS * DIMENSION_OF_EACH_SQUARE
         self.canvas = Canvas(self.root, width=canvas_width, height=canvas_height)
@@ -63,6 +65,7 @@ class View:
 
 
     def draw_board(self):
+        """Drawing a chees board"""
         current_color = BOARD_COLOR_2
         for row in range(NUMBER_OF_ROWS):
             current_color = self.get_alternate_color(current_color)
@@ -70,17 +73,21 @@ class View:
                 x1, y1 = self.get_x_y_coordinate(row, col)
                 x2, y2 = x1 + DIMENSION_OF_EACH_SQUARE, y1 + DIMENSION_OF_EACH_SQUARE
                 if(self.all_squares_to_be_highlighted and (row,col) in self.all_squares_to_be_highlighted):
+                    #creates rectangle using a coordinate system to specifc position of objects on a widget
                     self.canvas.create_rectangle(x1, y1, x2, y2, fill=HIGHLIGHT_COLOR)
                 else:
                     self.canvas.create_rectangle(x1, y1, x2, y2, fill=current_color)
                     current_color = self.get_alternate_color(current_color)
 
     def get_x_y_coordinate(self, row, col):
+        """Caclulating coordinates"""
         x = (col * DIMENSION_OF_EACH_SQUARE)
+        #Canvas widget measures the coordinates starting from the top left corner (0,0)
         y = ((7 - row) * DIMENSION_OF_EACH_SQUARE)
         return (x, y)
 
     def get_alternate_color(self, current_color):
+        """Returns alternating color"""
         if current_color == self.board_color_2:
             next_color = self.board_color_1
         else:
@@ -89,11 +96,11 @@ class View:
 
     def on_square_clicked(self, event):
         clicked_row, clicked_column =self.get_clicked_row_column(event)
-        print("Hey you clicked on", clicked_row, clicked_column)
+        #print("Hey you clicked on", clicked_row, clicked_column)
         position_of_click =self.controller.get_alphanumeric_position((clicked_row, clicked_column))
-        print("Hey you clicked on", position_of_click)
+        #print("Hey you clicked on", position_of_click)
         if self.selected_piece_position:  # on second click
-            # print("Hey you now clicked on", position_of_click)
+            #print("Hey you now selected", position_of_click)
             self.shift(self.selected_piece_position,position_of_click)
             self.selected_piece_position = None
         self.update_highlight_list(position_of_click)
@@ -101,6 +108,7 @@ class View:
         self.draw_all_pieces()
 
     def get_clicked_row_column(self, event):
+        """Returns a value of coordinates on which user clicked"""
         col_size = row_size = DIMENSION_OF_EACH_SQUARE
         clicked_column = event.x // col_size
         clicked_row = 7 - (event.y // row_size)
@@ -139,10 +147,12 @@ class View:
             except exceptions.ChessError as error:
                 self.info_label["text"] = error.__class__.__name__
             else:
-                self.update_label(selected_piece, start_pos,end_pos) #careful
+                self.update_label(selected_piece,start_pos,end_pos) #careful
 
-    def update_label(self, p1,p2):
-        self.info_label["text"] = '' + piece.color.capitalize() + "  :  " + p1 + p2 + '    '  '\'s turn'
+    def update_label(self,piece, p1,p2):
+        turn=("white" if piece.color=="black" else "black")
+        #add piece name
+        self.info_label["text"] = "" + piece.color.capitalize() + "  :  " + p1 +p2 +"  "+ turn.capitalize()+" \"s turn"
 
     def update_highlight_list(self, position):
         self.all_squares_to_be_highlighted = None
@@ -153,6 +163,7 @@ class View:
         if piece and (piece.color == self.controller.player_turn()):
             self.selected_piece_position = position
             self.all_squares_to_be_highlighted = list(map(self.controller.get_numeric_notation,self.controller.get_piece_at(position).moves_available(position)))
+            #map applies a function to the all the items in an input_list.
 
 
 
